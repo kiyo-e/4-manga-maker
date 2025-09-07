@@ -1,0 +1,35 @@
+{
+  "name": "manga-maker",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "$npm_execpath run build && vite preview",
+    "deploy": "$npm_execpath run build && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@google/genai": "^1.17.0",
+    "@hono/react-renderer": "^1.0.1",
+    "hono": "^4.9.6",
+    "lucide-react": "^0.542.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.28.4",
+    "@cloudflare/vite-plugin": "^1.2.3",
+    "@rollup/rollup-linux-x64-gnu": "^4.50.0",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "vite": "^6.3.5",
+    "vite-ssr-components": "^0.5.1",
+    "wrangler": "^4.17.0"
+  }
+}
