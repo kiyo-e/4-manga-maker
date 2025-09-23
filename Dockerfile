@@ -1,4 +1,5 @@
-FROM node:22-slim AS builder
+# Force builds to use the linux/amd64 base image so optional Rollup binaries resolve consistently.
+FROM --platform=linux/amd64 node:22-slim AS builder
 
 WORKDIR /app
 
@@ -11,7 +12,7 @@ COPY . .
 RUN npm run build
 
 
-FROM node:22-slim AS runner
+FROM --platform=linux/amd64 node:22-slim AS runner
 
 ENV NODE_ENV=production
 WORKDIR /app
