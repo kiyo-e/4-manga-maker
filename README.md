@@ -3,7 +3,7 @@
 Manga Maker is a hackathon prototype that lets users generate short comic strips with the help of Google Gemini.  The app collects a simple prompt, creates a four‑panel script, and renders manga‑style images for each panel.
 
 ## Architecture
-- **Cloudflare Worker + Hono** – serverless API and server‑side rendering.
+- **Edge runtime + Hono** – serverless API and server‑side rendering.
 - **React + Vite** – client UI with fast local development and SSR hydration.
 - **Tailwind CSS** – utility‑first styling for the React components.
 - **Google Gemini** – text and image generation for scripts, characters, and panels.
@@ -13,7 +13,7 @@ Manga Maker is a hackathon prototype that lets users generate short comic strips
 npm install
 npm run dev
 ```
-This starts the Vite dev server and the Cloudflare Worker entry for local development.
+This starts the Vite dev server for local development.
 
 ## Building and Previewing
 ```bash
@@ -26,24 +26,15 @@ npm run preview
 ```bash
 npm run deploy
 ```
-The command above builds the project and deploys the worker through `wrangler`.
+The command above builds the project and deploys the worker.
 
 ## Environment Variables
-Set your Gemini API key before running the worker:
+Set your Gemini API key before running the worker. For example, export it in your shell or add it to an `.env` file:
 ```bash
-wrangler secret put GEMINI_API_KEY
+export GEMINI_API_KEY="your-key"
 ```
 
-## Cloudflare Type Generation
-Generate strong types for your bindings:
-```bash
-npm run cf-typegen
-```
-Then pass `CloudflareBindings` when creating your Hono app:
-```ts
-// src/index.tsx
-const app = new Hono<{ Bindings: CloudflareBindings }>()
-```
+Use the generated bindings type when creating your Hono app.
 
 ## Project Structure
 - `src/api.ts` – `/v1` API endpoints for script, character, and panel generation.

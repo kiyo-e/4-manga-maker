@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai'
 
-export type WorkerEnv = {
+export type Env = {
   GEMINI_API_KEY?: string
 }
 
@@ -9,7 +9,7 @@ type InlineImage = {
 }
 
 export type GeneratePanelInput = {
-  env: WorkerEnv
+  env: Env
   model?: string
   canvas?: InlineImage // optional: used as a loose reference when present
   references?: InlineImage[] // optional: character/style refs
