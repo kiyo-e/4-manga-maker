@@ -1,48 +1,66 @@
 import { serve } from '@hono/node-server'
 import { serveStatic } from 'hono/serve-static'
-let app
-try {
-  const mod = await import('../dist/manga_matic/index.js')
-  app = mod?.default
-  if (!app) {
-    throw new Error('Default export missing')
-  }
-} catch (err) {
-  console.error('Failed to load built app. Run `npm run build` before starting Cloud Run server.')
-  throw err
-}
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const projectRoot = join(__dirname, '..')
+const distDir = join(projectRoot, 'dist')
+
+const findFirstExisting = (candidates) => candidates.find((p) => existsSync(p))
+
+const serverEntry = findFirstExisting([
+  join(distDir, 'manga_matic/index.js'),
+  join(distDir, 'index.js'),
+])
+
+if (!serverEntry) {
+  console.error('Build output not found. Run `npm run build` before starting Cloud Run server.')
+  process.exit(1)
+}
+
+const serverModule = await import(pathToFileURL(serverEntry).href)
+const app = serverModule?.default
+
+if (!app || typeof app.fetch !== 'function') {
+  console.error('Loaded server entry does not export a Hono app. Ensure the build step completed successfully.')
+  process.exit(1)
+}
+
+const staticRoot = findFirstExisting([
+  join(distDir, 'client'),
+  distDir,
+])
+
+if (staticRoot) {
+  const staticMiddleware = serveStatic({
+    root: staticRoot,
+    join,
+    isDir: async (filePath) => {
+      try {
+        return (await stat(filePath)).isDirectory()
+      } catch {
+        return undefined
+      }
+    },
+    getContent: async (filePath) => {
+      try {
+        return await readFile(filePath)
+      } catch {
+        return null
+      }
+    },
+  })
+
+  app.use('/assets/*', staticMiddleware)
+  app.use('/.vite/*', staticMiddleware)
+  app.get('/favicon.ico', staticMiddleware)
+  app.get('/robots.txt', staticMiddleware)
+}
 
 const port = Number(process.env.PORT || 8080)
-const assetsRoot = join(process.cwd(), 'dist/client')
-
-const staticMiddleware = serveStatic({
-  root: assetsRoot,
-  rewriteRequestPath: (path) => {
-    if (path.startsWith('/assets/')) return path.slice(1)
-    if (path.startsWith('/.vite/')) return path.slice(1)
-    return path.replace(/^\//, '')
-  },
-  isDir: async (filePath) => {
-    try {
-      return (await stat(filePath)).isDirectory()
-    } catch {
-      return undefined
-    }
-  },
-  getContent: async (filePath) => {
-    try {
-      return await readFile(filePath)
-    } catch {
-      return null
-    }
-  },
-})
-
-app.use('/assets/*', staticMiddleware)
-app.use('/.vite/*', staticMiddleware)
-app.use('/favicon.ico', staticMiddleware)
 
 serve({
   fetch: app.fetch,
