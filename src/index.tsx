@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { renderer } from './renderer.js'
 import api from './api.js'
+import { serve } from "@hono/node-server"
 
 const app = new Hono()
 
@@ -14,6 +15,8 @@ app.use(renderer)
 const isProd =
   (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') ||
   (typeof import.meta !== 'undefined' && (import.meta as any).env?.PROD)
+const port = Number(process.env.PORT) || 3000
+
 if (isProd) {
   // Client assets emitted by Vite live under dist/ (assets, .vite)
   app.use('/assets/*', serveStatic({ root: './dist' }))
@@ -27,5 +30,14 @@ if (isProd) {
 }
 
 app.get('/', (c) => c.render(<div id="root"></div>))
+
+
+if (isProd) {
+  console.log(`Server listening on http://localhost:${port}`);
+  serve({
+    fetch: app.fetch,
+    port: port
+  });
+}
 
 export default app

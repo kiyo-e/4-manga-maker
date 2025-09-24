@@ -2,19 +2,19 @@
   "name": "manga-maker",
   "type": "module",
   "scripts": {
-    "dev": "node server/dev.mjs",
-    "dev:bun": "bun server/dev.mjs",
+    "dev": "vite",
     "build": "npm run build:client && npm run build:server",
     "preview": "npm run build && vite preview",
     "start:prod": "node dist/server/server/node.js",
     "build:client": "vite build",
-    "build:server": "tsc -p tsconfig.server.json"
+    "build:server": "tsc -p tsconfig.server.json",
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^5.6.0",
     "@google/genai": "^1.17.0",
     "@hono/node-server": "^1.19.4",
     "@hono/react-renderer": "^1.0.1",
+    "@hono/vite-dev-server": "^0.21.1",
     "hono": "^4.9.6",
     "lucide-react": "^0.542.0",
     "react": "^19.1.1",
@@ -41,5 +41,6 @@
     "@rollup/rollup-linux-x64-gnu": "^4.50.0",
     "lightningcss-linux-arm64-gnu": "1.30.1",
     "lightningcss-linux-x64-gnu": "1.30.1"
-  }
+  },
+  "main": "function.js"
 }

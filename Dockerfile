@@ -1,38 +1,17 @@
-# Force builds to use the linux/amd64 base image so optional Rollup binaries resolve consistently.
-FROM --platform=linux/amd64 node:22-slim AS builder
+# Development container that runs the Vite dev server with Bun.
+FROM oven/bun:1.1.34
 
 WORKDIR /app
 
-# Install dependencies needed for building the Vite bundle.
-COPY package.json package-lock.json ./
-RUN npm ci
+# Install dependencies before copying the full source to leverage Docker layer caching.
+COPY package.json bun.lock ./
+RUN bun install --no-save
 
-# Copy project sources and build the production bundle.
+# Bring in the rest of the project files.
 COPY . .
-RUN npm run build
 
+# Make sure Vite binds to all interfaces when running inside the container.
+ENV HOST=0.0.0.0
+EXPOSE 5173
 
-FROM --platform=linux/amd64 node:22-slim AS runner
-
-ENV NODE_ENV=production
-WORKDIR /app
-
-# Install only production dependencies.
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
-  && npm cache clean --force
-
-# Copy the built assets and Cloud Run entry point from the builder stage.
-COPY --from=builder /app/dist ./dist
-COPY server ./server
-
-RUN chown -R node:node /app
-USER node
-
-# Cloud Run sets PORT; default to 8080 for local testing.
-ENV PORT=8080
-
-EXPOSE 8080
-
-# Use unbundled server entry (keeps process.env lookups dynamic)
-CMD ["node", "dist/server/server/node.js"]
+CMD ["bun", "run", "dev"]

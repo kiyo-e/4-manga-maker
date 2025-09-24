@@ -15,6 +15,5 @@
     "src/gemini.ts",
     "src/index.tsx",
     "src/renderer.tsx",
-    "src/server/node.ts"
   ]
 }
