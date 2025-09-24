@@ -10,9 +10,18 @@ function genId(prefix: string) {
 export const api = new Hono()
 
 function getEnv(c: any) {
-  // Merge Cloudflare/edge-style env (c.env) with Node's process.env for Cloud Run
+  // Prefer process.env (Cloud Run) and fall back to c.env (edge runtimes)
   const edgeEnv = (c && c.env) ? c.env : {}
-  return { ...process.env, ...edgeEnv } as { GEMINI_API_KEY?: string }
+  return {
+    GEMINI_API_KEY: (
+      process.env.GEMINI_API_KEY
+      ?? process.env.GOOGLE_API_KEY
+      ?? process.env.GOOGLE_GENAI_API_KEY
+      ?? (edgeEnv as any).GEMINI_API_KEY
+      ?? (edgeEnv as any).GOOGLE_API_KEY
+      ?? (edgeEnv as any).GOOGLE_GENAI_API_KEY
+    ) as string | undefined,
+  }
 }
 
 // Script generation (mock)
@@ -122,6 +131,16 @@ api.post('/generate/panels', async (c) => {
 
   return c.json({ panel_outputs: outputs })
 })
+
+// Optional: runtime diagnostics (disabled by default). Enable by setting
+// ALLOW_DEBUG_ENDPOINTS=1 on the service.
+if (process.env.ALLOW_DEBUG_ENDPOINTS === '1') {
+  api.get('/debug/env', (c) => {
+    const keys = ['GEMINI_API_KEY','GOOGLE_API_KEY','GOOGLE_GENAI_API_KEY']
+    const present = Object.fromEntries(keys.map(k => [k, !!process.env[k as keyof typeof process.env]]))
+    return c.json({ present })
+  })
+}
 
 function parseDataUrl(dataUrl: string): [mime: string, base64: string] {
   // data:image/png;base64,xxxx
