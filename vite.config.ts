@@ -17,5 +17,8 @@ export default defineConfig({
         /^\/node_modules\/.*/
       ]
     })
-  ]
+  ],
+  server: {
+    allowedHosts: ['.asia-northeast1.run.app']
+  }
 })
