@@ -9,24 +9,47 @@ function genId(prefix: string) {
 
 export const api = new Hono()
 
-function getEnv(c: any) {
+async function getEnv(c: any) {
   // Prefer process.env (Cloud Run) and fall back to c.env (edge runtimes)
   const edgeEnv = (c && c.env) ? c.env : {}
-  return {
-    GEMINI_API_KEY: (
-      process.env.GEMINI_API_KEY
-      ?? process.env.GOOGLE_API_KEY
-      ?? process.env.GOOGLE_GENAI_API_KEY
-      ?? (edgeEnv as any).GEMINI_API_KEY
-      ?? (edgeEnv as any).GOOGLE_API_KEY
-      ?? (edgeEnv as any).GOOGLE_GENAI_API_KEY
-    ) as string | undefined,
+  let key = (
+    process.env.GEMINI_API_KEY
+    ?? process.env.GOOGLE_API_KEY
+    ?? process.env.GOOGLE_GENAI_API_KEY
+    ?? (edgeEnv as any).GEMINI_API_KEY
+    ?? (edgeEnv as any).GOOGLE_API_KEY
+    ?? (edgeEnv as any).GOOGLE_GENAI_API_KEY
+  ) as string | undefined
+
+  if (!key && process.env.K_SERVICE) {
+    // Cloud Run fallback: try Secret Manager directly if permitted
+    try {
+      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager')
+      const client = new SecretManagerServiceClient()
+      const projectId = (await client.getProjectId().catch(() => process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT)) as string | undefined
+      const secretRef = process.env.GEMINI_API_KEY_SECRET || 'GEMINI_API_KEY'
+      const isFull = /\/secrets\//.test(secretRef)
+      if (projectId || isFull) {
+        const name = isFull ? secretRef : `projects/${projectId}/secrets/${secretRef}/versions/latest`
+        const [resp] = await client.accessSecretVersion({ name })
+        const buf = resp.payload?.data
+        if (buf) {
+          key = buf.toString('utf8')
+          // Cache for later calls in the same instance
+          process.env.GEMINI_API_KEY = key
+        }
+      }
+    } catch (e) {
+      // ignore; we'll surface config error in handlers
+    }
   }
+
+  return { GEMINI_API_KEY: key }
 }
 
 // Script generation (mock)
 api.post('/script/generate', async (c) => {
-  const env = getEnv(c)
+  const env = await getEnv(c)
   const { overall_desc, tone, use_character_b } = await c.req.json()
   try {
     const out = await generateScriptPanels(env, {
@@ -42,7 +65,7 @@ api.post('/script/generate', async (c) => {
 
 // Character generation (Nano Banana / Flash Image)
 api.post('/generate/character', async (c) => {
-  const env = getEnv(c)
+  const env = await getEnv(c)
   const body = await c.req.json()
   try {
     const { base64, mimeType } = await generateCharacterImage(env, {
@@ -59,7 +82,7 @@ api.post('/generate/character', async (c) => {
 
 // Generation (synchronous)
 api.post('/generate/panels', async (c) => {
-  const env = getEnv(c)
+  const env = await getEnv(c)
   const body = await c.req.json()
 
   // Resolve panel inputs and generate images synchronously (MVP)
@@ -133,10 +156,14 @@ api.post('/generate/panels', async (c) => {
 })
 
 // Lightweight diagnostics (no secret values exposed). Always available.
-api.get('/debug/env', (c) => {
+api.get('/debug/env', async (c) => {
   const keys = ['GEMINI_API_KEY','GOOGLE_API_KEY','GOOGLE_GENAI_API_KEY']
   const present = Object.fromEntries(keys.map(k => [k, !!process.env[k as keyof typeof process.env]]))
-  return c.json({ present })
+  const before = !!process.env.GEMINI_API_KEY
+  const env = await getEnv(c)
+  const after = !!env.GEMINI_API_KEY
+  const source = after ? (before ? 'env' : 'secret-manager') : 'none'
+  return c.json({ present, resolved: { GEMINI_API_KEY: after, source } })
 })
 
 function parseDataUrl(dataUrl: string): [mime: string, base64: string] {
