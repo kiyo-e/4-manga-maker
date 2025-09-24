@@ -15,7 +15,8 @@ app.use(renderer)
 const isProd =
   (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') ||
   (typeof import.meta !== 'undefined' && (import.meta as any).env?.PROD)
-const port = Number(process.env.PORT) || 3000
+const port = Number(process.env.PORT) || 5173
+const host = process.env.HOST || '0.0.0.0'
 
 if (isProd) {
   // Client assets emitted by Vite live under dist/ (assets, .vite)
@@ -36,7 +37,8 @@ if (isProd) {
   console.log(`Server listening on http://localhost:${port}`);
   serve({
     fetch: app.fetch,
-    port: port
+    port: port,
+    hostname: host,
   });
 }
 
