@@ -1,5 +1,5 @@
-# Development container that runs the Vite dev server with Bun.
-FROM oven/bun:1.1.34
+# Development container that runs the Vite dev server via Bun, using Node.js 22.12+ for Vite compatibility.
+FROM oven/bun:1.2-alpine
 
 WORKDIR /app
 

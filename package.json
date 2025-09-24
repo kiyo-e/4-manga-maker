@@ -7,7 +7,7 @@
     "preview": "npm run build && vite preview",
     "start:prod": "node dist/server/server/node.js",
     "build:client": "vite build",
-    "build:server": "tsc -p tsconfig.server.json",
+    "build:server": "tsc -p tsconfig.server.json"
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^5.6.0",

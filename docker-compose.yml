@@ -9,11 +9,11 @@ services:
       - PORT=8080
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
   dev:
-    image: oven/bun:1.1-alpine
+    image: oven/bun:1.2-alpine
     working_dir: /app
     volumes:
       - .:/app
-    command: sh -c "bun install && bun run dev:bun"
+    command: sh -c "bun install && bun run dev"
     ports:
       - "5173:5173"
     environment:
