@@ -132,15 +132,12 @@ api.post('/generate/panels', async (c) => {
   return c.json({ panel_outputs: outputs })
 })
 
-// Optional: runtime diagnostics (disabled by default). Enable by setting
-// ALLOW_DEBUG_ENDPOINTS=1 on the service.
-if (process.env.ALLOW_DEBUG_ENDPOINTS === '1') {
-  api.get('/debug/env', (c) => {
-    const keys = ['GEMINI_API_KEY','GOOGLE_API_KEY','GOOGLE_GENAI_API_KEY']
-    const present = Object.fromEntries(keys.map(k => [k, !!process.env[k as keyof typeof process.env]]))
-    return c.json({ present })
-  })
-}
+// Lightweight diagnostics (no secret values exposed). Always available.
+api.get('/debug/env', (c) => {
+  const keys = ['GEMINI_API_KEY','GOOGLE_API_KEY','GOOGLE_GENAI_API_KEY']
+  const present = Object.fromEntries(keys.map(k => [k, !!process.env[k as keyof typeof process.env]]))
+  return c.json({ present })
+})
 
 function parseDataUrl(dataUrl: string): [mime: string, base64: string] {
   // data:image/png;base64,xxxx
