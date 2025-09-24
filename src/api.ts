@@ -173,17 +173,6 @@ api.post('/generate/panels', async (c) => {
   }
 })
 
-// Lightweight diagnostics (no secret values exposed). Always available.
-api.get('/debug/env', async (c) => {
-  const keys = ['GEMINI_API_KEY','GOOGLE_API_KEY','GOOGLE_GENAI_API_KEY']
-  const present = Object.fromEntries(keys.map(k => [k, !!process.env[k as keyof typeof process.env]]))
-  const before = !!process.env.GEMINI_API_KEY
-  const env = await getEnv(c)
-  const after = !!env.GEMINI_API_KEY
-  const source = after ? (before ? 'env' : 'secret-manager') : 'none'
-  return c.json({ present, resolved: { GEMINI_API_KEY: after, source } })
-})
-
 function parseDataUrl(dataUrl: string): [mime: string, base64: string] {
   // data:image/png;base64,xxxx
   const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl)
