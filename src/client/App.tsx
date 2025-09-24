@@ -461,11 +461,15 @@ export default function ComicMakerApp(){
           { stylePreset: charA.stylePreset || 'chibi-gag', prompt: charA.prompt || '', refs: [], generated: urlA },
           { stylePreset: charB.stylePreset || 'chibi-gag', prompt: charB.prompt || '', refs: [], generated: urlB },
         ]
-        const genUrls: Array<string|null> = []
-        for (let i=0;i<PANEL_COUNT;i++){
-          const u = await generateViaAPI(i, { characters: charactersForGen, useCharacterB: newUseB, panels: panelsForGen })
-          genUrls[i] = u
-        }
+        const genUrls: Array<string|null> = await Promise.all(
+          panelsForGen.map((_, idx) =>
+            generateViaAPI(idx, {
+              characters: charactersForGen,
+              useCharacterB: newUseB,
+              panels: panelsForGen,
+            })
+          )
+        )
         // Compose images and open preview
         setOverlayLabel(t('overlay.composingImages'))
         const info = panelsForGen.map(p=> ({ desc: p.desc || '', lineA: p.lineA || '', lineB: newUseB ? (p.lineB || '') : '' }))

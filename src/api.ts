@@ -100,30 +100,27 @@ api.post('/generate/character', async (c) => {
   }
 })
 
-// Generation (synchronous)
+// Generation (parallel per request)
 api.post('/generate/panels', async (c) => {
   const env = await getEnv(c)
   const body = await c.req.json()
 
   // Resolve panel inputs and generate images synchronously (MVP)
   const indexes: number[] = body.indexes || []
-  const outputs: any[] = []
 
-  for (const i of indexes) {
+  const charRefData: Array<[mime: string, base64: string]> = [
+    ...(body.characters?.A?.ref_data_urls || []),
+    ...(body.characters?.B?.ref_data_urls || []),
+  ]
+    .filter((u: string) => typeof u === 'string' && u.startsWith('data:'))
+    .map((u: string) => parseDataUrl(u))
+
+  const tasks = indexes.map(async (i) => {
     const key = String(i)
     const p = (body.panels && body.panels[key]) || {}
 
-    // Collect reference images from character A/B (data URLs only)
-    const refDataUrls: string[] = [
-      ...(body.characters?.A?.ref_data_urls || []),
-      ...(body.characters?.B?.ref_data_urls || []),
-    ]
-    const references: any[] = refDataUrls
-      .filter((u: string) => typeof u === 'string' && u.startsWith('data:'))
-      .map((u: string) => {
-        const [mimeType, data] = parseDataUrl(u)
-        return { inlineData: { mimeType, data } }
-      })
+    // Clone shared references per panel to avoid cross-mutation
+    const references = charRefData.map(([mimeType, data]) => ({ inlineData: { mimeType, data } }))
 
     // Resolve optional canvas image and include as a reference when present
     let hasCanvas = false
@@ -135,7 +132,6 @@ api.post('/generate/panels', async (c) => {
       } catch {}
     }
 
-    // Build guidance text
     const guidance = {
       desc: p.desc,
       layoutHint: p.layoutHint,
@@ -149,30 +145,32 @@ api.post('/generate/panels', async (c) => {
         stylePreset: body?.characters?.A?.style_preset,
         prompt: body?.characters?.A?.prompt,
       },
-      charB: body?.characters?.B ? {
-        stylePreset: body?.characters?.B?.style_preset,
-        prompt: body?.characters?.B?.prompt,
-      } : undefined,
+      charB: body?.characters?.B
+        ? {
+            stylePreset: body?.characters?.B?.style_preset,
+            prompt: body?.characters?.B?.prompt,
+          }
+        : undefined,
     }
 
-    // Call Gemini
-    try {
-      const { base64, mimeType } = await generatePanelImage({
-        env,
-        references,
-        guidance,
-        size: { width: 1024, height: 1024 },
-      })
+    const { base64, mimeType } = await generatePanelImage({
+      env,
+      references,
+      guidance,
+      size: { width: 1024, height: 1024 },
+    })
 
-      const url = `data:${mimeType};base64,${base64}`
-      outputs.push({ index: i, url })
-    } catch (err: any) {
-      const message = err?.message || 'generation failed'
-      return c.json({ error: { code: 'internal', message } }, 500)
-    }
+    const url = `data:${mimeType};base64,${base64}`
+    return { index: i, url }
+  })
+
+  try {
+    const outputs = await Promise.all(tasks)
+    return c.json({ panel_outputs: outputs })
+  } catch (err: any) {
+    const message = err?.message || 'generation failed'
+    return c.json({ error: { code: 'internal', message } }, 500)
   }
-
-  return c.json({ panel_outputs: outputs })
 })
 
 // Lightweight diagnostics (no secret values exposed). Always available.
