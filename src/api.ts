@@ -9,9 +9,15 @@ function genId(prefix: string) {
 
 export const api = new Hono()
 
+function getEnv(c: any) {
+  // Merge Cloudflare/edge-style env (c.env) with Node's process.env for Cloud Run
+  const edgeEnv = (c && c.env) ? c.env : {}
+  return { ...process.env, ...edgeEnv } as { GEMINI_API_KEY?: string }
+}
+
 // Script generation (mock)
 api.post('/script/generate', async (c) => {
-  const env: any = c.env || {}
+  const env = getEnv(c)
   const { overall_desc, tone, use_character_b } = await c.req.json()
   try {
     const out = await generateScriptPanels(env, {
@@ -27,7 +33,7 @@ api.post('/script/generate', async (c) => {
 
 // Character generation (Nano Banana / Flash Image)
 api.post('/generate/character', async (c) => {
-  const env: any = c.env || {}
+  const env = getEnv(c)
   const body = await c.req.json()
   try {
     const { base64, mimeType } = await generateCharacterImage(env, {
@@ -44,7 +50,7 @@ api.post('/generate/character', async (c) => {
 
 // Generation (synchronous)
 api.post('/generate/panels', async (c) => {
-  const env: any = c.env || {}
+  const env = getEnv(c)
   const body = await c.req.json()
 
   // Resolve panel inputs and generate images synchronously (MVP)

@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { createServer as createViteServer } from 'vite'
+import { readFileSync, existsSync } from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '..')
@@ -10,6 +11,20 @@ const host = process.env.VITE_HOST || '0.0.0.0'
 const port = Number(process.env.VITE_PORT || 5173)
 
 async function bootstrap() {
+  // Load local .dev.vars (KEY=VALUE) if present to ease local development
+  const devVarsPath = resolve(projectRoot, '.dev.vars')
+  if (existsSync(devVarsPath)) {
+    try {
+      const text = readFileSync(devVarsPath, 'utf-8')
+      for (const line of text.split(/\r?\n/)) {
+        const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line)
+        if (!m) continue
+        const key = m[1]
+        const val = m[2].replace(/^"|"$/g, '')
+        if (!process.env[key]) process.env[key] = val
+      }
+    } catch {}
+  }
   // Start Vite in middleware mode so it doesn't open its own HTTP server
   const vite = await createViteServer({
     root: projectRoot,
@@ -97,4 +112,3 @@ bootstrap().catch((e) => {
   console.error(e)
   process.exit(1)
 })
-

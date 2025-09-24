@@ -170,7 +170,7 @@ export async function generatePanelImage({
 // -------------------------------
 // Script generation (Gemini 2.5 Pro)
 // -------------------------------
-export async function generateScriptPanels(env: WorkerEnv, args: {
+export async function generateScriptPanels(env: Env, args: {
   overallDesc: string
   tone?: string
   useCharacterB?: boolean
@@ -272,7 +272,7 @@ export async function generateScriptPanels(env: WorkerEnv, args: {
 // -------------------------------
 // Character image generation (Nano Banana / Flash Image)
 // -------------------------------
-export async function generateCharacterImage(env: WorkerEnv, args: {
+export async function generateCharacterImage(env: Env, args: {
   name?: string
   stylePreset?: string
   prompt?: string
