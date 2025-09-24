@@ -34,5 +34,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-# Use unbundled server build (keeps process.env lookups dynamic)
-CMD ["node", "dist/server/index.js"]
+# Use unbundled server entry (keeps process.env lookups dynamic)
+CMD ["node", "dist/server/server/node.js"]

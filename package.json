@@ -6,7 +6,7 @@
     "dev:bun": "bun server/dev.mjs",
     "build": "npm run build:client && npm run build:server",
     "preview": "npm run build && vite preview",
-    "start:prod": "node dist/server/index.js",
+    "start:prod": "node dist/server/server/node.js",
     "build:client": "vite build",
     "build:server": "tsc -p tsconfig.server.json"
   },
