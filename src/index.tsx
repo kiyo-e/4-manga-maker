@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { renderer } from './renderer'
-import api from './api'
+import { renderer } from './renderer.js'
+import api from './api.js'
 
 const app = new Hono()
 
@@ -10,8 +10,11 @@ app.route('/v1', api)
 app.use(renderer)
 
 // In production, serve built static assets (client CSS/JS) so SSR HTML can load them.
-// Cloud Run runs the server from project root; built assets live under `dist/`.
-if (import.meta.env?.PROD) {
+// When running on Cloud Run we rely on NODE_ENV=production rather than Vite injected globals.
+const isProd =
+  (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') ||
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.PROD)
+if (isProd) {
   // Client assets emitted by Vite live under dist/ (assets, .vite)
   app.use('/assets/*', serveStatic({ root: './dist' }))
   app.use('/.vite/*', serveStatic({ root: './dist' }))

@@ -157,7 +157,8 @@ export async function generatePanelImage({
   const cand = resp.candidates?.[0]
   if (!cand) throw new Error('No candidates returned from Gemini')
 
-  for (const part of cand.content.parts ?? []) {
+  const parts = cand.content?.parts ?? []
+  for (const part of parts) {
     const inline = (part as any).inlineData
     if (inline?.data) {
       return { base64: inline.data, mimeType: inline.mimeType || 'image/png' }

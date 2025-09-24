@@ -34,5 +34,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-# Use wrapper that mounts static assets and starts the Hono app
-CMD ["node", "dist/index.js"]
+# Use unbundled server build (keeps process.env lookups dynamic)
+CMD ["node", "dist/server/index.js"]

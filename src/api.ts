@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { generatePanelImage, generateScriptPanels, generateCharacterImage } from './gemini'
+import { generatePanelImage, generateScriptPanels, generateCharacterImage } from './gemini.js'
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 // (Removed) No job queue; generation responds synchronously.
 
@@ -21,6 +23,24 @@ async function getEnv(c: any) {
     ?? (edgeEnv as any).GOOGLE_GENAI_API_KEY
   ) as string | undefined
 
+  // Fallback: file mounts (Cloud Run/Secret Manager volume)
+  if (!key) {
+    const fileVars = [
+      process.env.GEMINI_API_KEY_FILE,
+      process.env.GOOGLE_API_KEY_FILE,
+      process.env.GOOGLE_GENAI_API_KEY_FILE,
+    ].filter(Boolean) as string[]
+    for (const p of fileVars) {
+      try {
+        const fp = resolve(p)
+        if (existsSync(fp)) {
+          const v = readFileSync(fp, 'utf8').trim()
+          if (v) { key = v; process.env.GEMINI_API_KEY = key; break }
+        }
+      } catch {}
+    }
+  }
+
   if (!key && process.env.K_SERVICE) {
     // Cloud Run fallback: try Secret Manager directly if permitted
     try {
@@ -34,7 +54,7 @@ async function getEnv(c: any) {
         const [resp] = await client.accessSecretVersion({ name })
         const buf = resp.payload?.data
         if (buf) {
-          key = buf.toString('utf8')
+          key = Buffer.from(buf).toString('utf8')
           // Cache for later calls in the same instance
           process.env.GEMINI_API_KEY = key
         }
