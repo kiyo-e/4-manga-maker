@@ -6,7 +6,7 @@
     "dev:bun": "bun server/dev.mjs",
     "build": "vite build",
     "preview": "$npm_execpath run build && vite preview",
-    "start:cloudrun": "node server/cloud-run.mjs"
+    "start:prod": "node dist/index.js"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
