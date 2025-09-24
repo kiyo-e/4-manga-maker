@@ -2,7 +2,8 @@
   "name": "manga-maker",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node server/dev.mjs",
+    "dev:bun": "bun server/dev.mjs",
     "build": "vite build",
     "preview": "$npm_execpath run build && vite preview",
     "start:cloudrun": "node server/cloud-run.mjs"

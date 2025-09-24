@@ -10,10 +10,13 @@ Manga Maker is a hackathon prototype that lets users generate short comic strips
 
 ## Getting Started
 ```bash
-npm install
-npm run dev
+npm install   # または bun install
+npm run dev   # または bun run dev
 ```
-This starts the Vite dev server for local development.
+SSR (Hono) と Vite(HMR) を同一ポートで提供する開発サーバが起動します。
+
+- ブラウザ: http://localhost:5173/
+- ネットワーク公開が必要なら `VITE_HOST=0.0.0.0` を指定してください。
 
 ## Building and Previewing
 ```bash
@@ -21,6 +24,24 @@ npm run build
 npm run preview
 ```
 `build` outputs the client bundle and worker script under `dist/`, while `preview` serves the built app locally.
+
+## Docker / Docker Compose
+
+Production (build image and run Node server):
+```bash
+docker compose up --build app
+# open http://localhost:8080/
+```
+
+Development (SSR + Vite in one process on port 5173):
+```bash
+docker compose up dev
+# open http://localhost:5173/
+```
+
+Notes:
+- The container reads `GEMINI_API_KEY` if set.
+- The production container runs `server/cloud-run.mjs` which serves static assets from `dist` and mounts the Hono app.
 
 ## Deployment
 ```bash

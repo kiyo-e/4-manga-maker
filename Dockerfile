@@ -34,4 +34,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["node", "dist/index.js"]
+# Use wrapper that mounts static assets and starts the Hono app
+CMD ["node", "server/cloud-run.mjs"]

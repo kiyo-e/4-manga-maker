@@ -2,8 +2,21 @@ services:
   app:
     build:
       context: .
+      # Final image runs Node server with static assets
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+  dev:
+    image: oven/bun:1.1-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "bun install && bun run dev:bun"
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=5173
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
